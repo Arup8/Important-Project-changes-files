@@ -1,0 +1,49 @@
+src\components\dashboard\components\eventsettings\components\common\eventsetting-menu.js
+src\components\dashboard\components\eventsettings\index.js
+src\components\dashboard\components\auditlog\components\index.js
+src\components\dashboard\components\auditlog\actions\index.js
+src\components\dashboard\components\general\actions\index.js
+
+
+backend
+eventifyscript_services.php
+
+    case "fetch_audit_logs": {
+            $params = $event['request']['payload'];
+            $eventid = isset($params['eventid']) ? (int)$params['eventid'] : 0;
+            $appuserid = isset($params['appuserid']) ? (int)$params['appuserid'] : 0;
+            $limit = isset($params['limit']) && $params['limit'] !== '' && $params['limit'] !== null ? $params['limit'] : 10;
+            $offset = isset($params['offset']) && $params['offset'] !== '' && $params['offset'] !== null ? $params['offset'] : 0;
+
+            $conn = eventifyDBConnection(['readonly' => true]);
+            // Count
+            $sql_count = "SELECT a2.action_type,a1.request_info,a1.timestamp, a2.record_id,a2.old_values,a1.action_by_appuserid,a.firstname,a.lastname,a.email,a.profileurl ,a1.eventid,e.eventname,a2.table_name FROM audit_log a1 JOIN audit_log_dump a2 on a2.record_id=a1.entity_id JOIN event e on e.eventid=a1.eventid join appuser a on a.appuserid=a1.action_by_appuserid WHERE 1=1";
+            if ($eventid != 0) {
+                $sql_count .= " AND a1.eventid = {$eventid}";
+            }
+            if ($appuserid != 0) {
+                $sql_count .= " AND a1.action_by_appuserid = {$appuserid}";
+            }
+            $sql_count .= " ORDER BY a1.timestamp DESC";
+            $result_set = mysqli_query($conn, $sql_count);
+            $total_count = mysqli_num_rows($result_set);
+
+            // Data Fetch
+            $sql = "SELECT a2.action_type,a1.request_info,a1.timestamp, a2.record_id,a2.old_values,a1.action_by_appuserid,a.firstname,a.lastname,a.email,a.profileurl ,a1.eventid,e.eventname, a2.table_name FROM audit_log a1 JOIN audit_log_dump a2 on a2.record_id=a1.entity_id JOIN event e on e.eventid=a1.eventid join appuser a on a.appuserid=a1.action_by_appuserid WHERE 1=1";
+            if ($eventid != 0) {
+                $sql .= " AND a1.eventid = {$eventid}";
+            }
+            if ($appuserid != 0) {
+                $sql .= " AND a1.action_by_appuserid = {$appuserid}";
+            }
+            $sql .= " ORDER BY a1.timestamp DESC LIMIT {$limit} OFFSET {$offset}";
+            $query = $conn->query($sql);
+            $audit_log_data = [];
+
+            while ($data = $query->fetch_assoc()) {
+                $audit_log_data[] = $data;
+            }
+            $return = array('success' => 1, 'data' => $audit_log_data, 'total_count' => $total_count);
+            return finaliseResponse($conn, $return);
+        }
+        break;
