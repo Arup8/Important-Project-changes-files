@@ -1,0 +1,4 @@
+src\components\dashboard\components\content\components\common\formhelpers.js
+src\components\dashboard\components\content\components\common\base-component.js
+src\components\dashboard\components\auditlog\components\index.js
+src\components\dashboard\components\general\actions\index.js
